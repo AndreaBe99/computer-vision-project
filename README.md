@@ -8,6 +8,19 @@ However, this procedure is very difficult to perform alone, so our goal is to us
 
 - The second Task has the objective of correcting the posture of MTB cyclists during descents on rough Trails, in fact given an input side image of the cyclist traveling downhill, the program identifies the wheels of the bicycle and the Key Points of the cyclist to calculate if the center of gravity of the latter is located inside the two wheels. This is because if the center of gravity is too far back, grip on the front will be lost, while if it is too far forward, the cyclist could fall forward if he encounters an obstacle such as a stone or a root.
 
+## OpenPose vs MediaPipe
+
+For the project I didn't use OpenPose, but MediaPipe mainly for two reasons:
+
+- the first concerns the fact that OpenPose is not optimized for CPU usage, and not having a device with a dedicated GPU, image processing required about ten seconds, while videos could not be analysed.
+- the second reason is that while deploying on Google Cloud using OpenPose gave me problems, as I was unable to use GPU Cuda due to the fact that my test credit for Google Cloud is almost empty.
+
+I decided to use mediapipe because in addition to the Pose Estimation it is also possible to obtain a mask of the human body useful for the second task of the project, when calculating the center of mass. Furthermore, through various searches I have found that it is more reliable than Openpose, as is written in the following article [Detection of human body landmarks - MediaPipe and OpenPose comparison](https://www.hearai.pl/post/14-openpose/)
+
+
+ ## Slides
+
+It is possible to find the slides of the presentation of the project at the following link [Computer Vision Slides](https://docs.google.com/presentation/d/1EyEG7qIevNA8es4BO4-PQPoszGo3Drr9zkRvOMwjQz8/edit?usp=sharing).
 
 ## Folder Structure
 
@@ -49,6 +62,57 @@ Download yolov3 weight at [pjreddie.com](https://pjreddie.com/media/files/yolov3
 Install Python requirements
 
     pyhton3 -m pip install -r requirements.txt
+
+## Step to reproduce it loacally
+
+1. Download repository:
+
+    ```
+        git clone https://github.com/AndreaBe99/computer-vision-project.git 
+    ```
+
+2. Download the .weights file:
+
+    ```
+    cd computer-vision-project/backend/mtb_downhill/yolo_object_detection/
+    wget https://pjreddie.com/media/files/yolov3.weights
+    ```
+
+3. Download and then rename Google Account Credential  (It is private):
+
+    ```
+    mv source_file GAC.json
+    ```
+
+4. Create venv and activate it:
+
+    ```
+    python3 -m venv cv-env
+
+    source cv-env/bin/activate
+    ```
+
+    If the project has problems displaying the *qt* application try using a conda environment, with conda opencv.
+
+5. Install requirements:
+
+    ```
+    pip3 install -r requirements.txt
+    ```
+
+6. Install ffmpeg:
+
+    ```
+    apt-get -y update
+    apt-get -y upgrade
+    apt-get install -y ffmpeg
+    ```
+
+7. Run:
+
+    ```
+    python3 app.py
+    ```
 
 ## Step to deploy on Google Cloud Platform
 
@@ -105,47 +169,4 @@ Install Python requirements
     gcloud builds submit --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/computer-vision-website
 
     gcloud run deploy cv-website --image gcr.io/${GOOGLE_CLOUD_PROJECT}/computer-vision-website
-    ```
-
-## Step to reproduce it loacally
-
-1. Download repository:
-    ```
-        git clone https://github.com/AndreaBe99/computer-vision-project.git 
-    ```
-
-2. Download the .weights file:
-    ```
-    cd computer-vision-project/backend/mtb_downhill/yolo_object_detection/
-    wget https://pjreddie.com/media/files/yolov3.weights
-    ```
-
-3. Download and then rename Google Account Credential  (It is private):
-    ```
-    mv source_file GAC.json
-    ```
-
-4. Create venv and activate it:
-    ```
-    python3 -m venv cv-env
-
-    source cv-env/bin/activate
-    ```
-    If the project has problems displaying the *qt* application try using a conda environment, with conda opencv.
-
-5. Install requirements:
-    ```
-    pip3 install -r requirements.txt
-    ```
-
-6. Install ffmpeg:
-    ```
-    apt-get -y update
-    apt-get -y upgrade
-    apt-get install -y ffmpeg
-    ```
-
-7. Run:
-    ```
-    python3 app.py
     ```
