@@ -15,7 +15,7 @@ However, this procedure is very difficult to perform alone, so our goal is to us
 .
 ├── backend                             # Computer Vision Tasks
 │   ├── bike_fitting        
-│   │   └── test.py                     # Bike Fitting Task
+│   │   └── capture_video.py            # Bike Fitting Task
 │   └── mtb_down_hill       
 │       ├── yolo_object_detection
 │       │   ├── yolov3.cgf              # Config File for YOLO

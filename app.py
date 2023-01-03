@@ -16,7 +16,7 @@ from werkzeug.datastructures import FileStorage
 from config import *
 from frontend.frontend import *
 from backend.mtb_downhill.bike_detector import pipeline as bike_detector_pipeline
-from backend.bike_fitting.capture_video_test import pipeline as bike_fitting_pipeline
+from backend.bike_fitting.capture_video import pipeline as bike_fitting_pipeline
 
 from google.cloud import storage
 
