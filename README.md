@@ -40,6 +40,16 @@ However, this procedure is very difficult to perform alone, so our goal is to us
 └── README.md
 ```
 
+## Requirements for local execution
+
+Download yolov3 weight at [pjreddie.com](https://pjreddie.com/media/files/yolov3.weights)
+
+    wget https://pjreddie.com/media/files/yolov3.weights
+
+Install Python requirements
+
+    pyhton3 -m pip install -r requirements.txt
+
 ## Step to deploy on Google Cloud Platform
 
 1. Create a bucket if it not exists.
