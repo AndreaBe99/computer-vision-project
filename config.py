@@ -16,7 +16,7 @@ CLOUD_STORAGE_BUCKET = "cv-project-bucket"
 GOOGLE_APPLICATION_CREDENTIALS = "GAC.json"
 
 # Backend
-DEBUG = True
+DEBUG = False
 
 class AnglesRange(Enum):
     # Knee angle is between 90° and 190°, with 140° as the ideal value,
