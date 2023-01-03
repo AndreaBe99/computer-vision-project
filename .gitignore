@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+#### MY PROJECT ####
+*.weights
+*.pyc
+.idea/
+/cv-env
+/__pycache__
+capture_video_test.py
+video_single_frame_test.py
+GAC.json
