@@ -131,6 +131,7 @@ Install Python requirements
 
     source cv-env/bin/activate
     ```
+    If the project has problems displaying the *qt* application try using a conda environment, with conda opencv.
 
 5. Install requirements:
     ```
