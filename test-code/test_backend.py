@@ -57,7 +57,7 @@ def test_bike_fitting():
 
 
 if __name__ == "__main__":
-    test_mtb_downhill()
-    # test_bike_fitting()
+    # test_mtb_downhill()
+    test_bike_fitting()
 
 
