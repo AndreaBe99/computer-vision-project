@@ -10,8 +10,6 @@ def print_extended_line(p1, p2, image, color=(0, 0, 255)):
     args:
         p1: the first point of the line
         p2: the second point of the line distance: the distance to extend the line
-    returns:
-        new_line: the extended line
     """
     image_width, image_height, _ = image.shape
     if image_width > image_height:
@@ -52,7 +50,6 @@ def print_circle(image, circles):
 def print_point_mtb_descent(image, points, text, color=(255, 255, 0)):
     """
     Print a point in the image
-    
     args:   
         image: the image where the point will be printed
         point: the point to be printed
@@ -86,6 +83,10 @@ def save_plot(point_list):
 def print_point_bike_fitting(points_list, frame, color=(0, 255, 0)):
     """
     Print the points in the list on the frame
+    args:
+        points_list: list of points
+        frame: frame where the points will be printed
+        color: color of the points
     """
     for point in points_list:
         cv2.circle(frame, (int(point[0][0]), int(point[0][1])), 3, color, -1)
@@ -114,6 +115,7 @@ def get_frame_from_point(video, frame_index):
 def print_frame(mp_obj, video, frame_index, name: str):
     """Print a frame of a video that is one of the cardinal points with the landmarks
     args:
+        mp_obj: MediaPipe object
         video: VideoCapture object
         frame_index: index of the frame
         name: name of the frame, EAST, NORD, WEST, SOUTH

@@ -10,6 +10,7 @@ def get_bike_direction(mp_obj, landmarks: list):
     """
     Compute the direction of the bike
     args:
+        mp_obj: mediapipe object
         landmarks_list: list of landmarks, one list for each frame, and each landmark is a list of 33 elements
     return:
         direction: direction of the bike, 'left' or 'right'
@@ -36,8 +37,10 @@ def get_pedals_cardinal_point(mp_obj, image, landmarks_list: list, side: int):
     Compute the centroids of the middle point between foot and hill, for all frames, then obtain the cardinal points
     using the length of the rider's foot
     args:
+        mp_obj: mediapipe object
         image: image of the video
         landmarks_list: list of landmarks of all frames
+        side: side of the rider, 0: left, 1: right
     return:
         cardinal_points: list of cardinal points, [point_east, point_south, point_west, point_nord]
     """
@@ -48,28 +51,24 @@ def get_pedals_cardinal_point(mp_obj, image, landmarks_list: list, side: int):
         heel = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HEEL + side]
         # compute middle point between foot and heel
         point = [foot.x + (heel.x - foot.x) / 2, foot.y + (heel.y - foot.y) / 2]
+        
         ### PRINT TEST ###
         cv2.circle(image, (int(point[0] * image_width), int(point[1]*image_height)), 1, (0, 0, 255), 3)
         ##################
+        
         foot_list.append([point[0], point[1]])
-
 
     # Plot the points and save the image
     save_plot(foot_list)
 
     # Compute the centroid
     centroid = get_centroid(foot_list)
+    
     ### PRINT TEST ###
     cv2.circle(image, (int(centroid[0] * image_width), int(centroid[1]*image_height)), 2, (0, 255, 255), 3)
     ##################
 
-    # Compute distance between foot and  heel
-    # distance = get_distance([foot.x, foot.y], [heel.x, heel.y]) / 2
-    # add 40% to the distance
-    # distance += distance * 0.4
-
     # Compute the four cardinal point around centroid
-    ### TEST ###
     max_x = max([p[0] for p in foot_list])
     min_x = min([p[0] for p in foot_list])
     max_y = max([p[1] for p in foot_list])
@@ -78,12 +77,6 @@ def get_pedals_cardinal_point(mp_obj, image, landmarks_list: list, side: int):
     point_south = [int(centroid[0] * image_width), int(max_y * image_height)]
     point_west = [int(min_x * image_width), int( centroid[1] * image_height)]
     point_north = [int(centroid[0] * image_width), int(min_y * image_height)]
-
-    # point_east = [int( (centroid[0] + distance) * image_width), int( centroid[1] * image_height)]
-    # point_south = [int( centroid[0] * image_width), int( (centroid[1] + distance) * image_height)]
-    # point_west = [int( (centroid[0] - distance) * image_width), int( centroid[1] * image_height)]
-    # point_north = [int( centroid[0] * image_width), int( (centroid[1] - distance) * image_height)]
-    ############
 
     ### PRINT TEST ###
     cv2.circle(image, (int(point_east[0]), int(point_east[1])), 5, (255, 255, 0), 3)
@@ -96,7 +89,17 @@ def get_pedals_cardinal_point(mp_obj, image, landmarks_list: list, side: int):
 
 
 def get_cardinal_points_list(mp_obj, image, landmarks_list: list, cardinal_points: list, side: int):
-    """Compute the frames that are at hours 3, 6, 9, 12 of the pedal"""
+    """
+    Compute the frames that are at hours 3, 6, 9, 12 of the pedal
+    args:
+        mp_obj: mediapipe object
+        image: image of the video
+        landmarks_list: list of landmarks of all frames
+        cardinal_points: list of cardinal points, [point_east, point_south, point_west, point_north]
+        side: side of the rider, 0: left, 1: right
+    return:
+        cardinal_points_list: list of cardinal points, [point_east, point_south, point_west, point_north]
+    """
     image_height, image_width, _ = image.shape
     # Compute a list of the points near to the respetive cardinal point, list: [point, frame_index]
     point_list_east, point_list_south, point_list_west, point_list_north = [], [], [], []
@@ -137,7 +140,9 @@ def get_knee_angle(mp_obj, landmarks: list, side: int):
     """
     Compute the angle between the ankle, knee and the hip
     args:
+        mp_obj: mediapipe object
         landmarks: list of landmarks of a frame
+        side: 0 for left, 1 for right
     return:
         maximum_angle: maximum angle between ankle, knee and hip
     """
@@ -151,7 +156,9 @@ def get_ankle_angle(mp_obj, landmarks: list, side: int):
     """
     Compute the angle between the foot, ankle and the knee
     args:
+        mp_obj: mediapipe object
         landmarks: list of landmarks of a frame
+        side: 0 for left, 1 for right
     return:
         maximum_angle: maximum angle between foot, ankle and the knee
     """
@@ -164,11 +171,13 @@ def get_mean_angles_saddle_height(mp_obj, points_list: list, landmarks: list, si
     """
     Compute the angles of the knee and the ankle, for each point in the list, then compute the mean
     args:
+        mp_obj: mediapipe object
         points_list: list of points
         landmarks: list of landmarks
+        side: 0 for left, 1 for right
     return:
-        mean_knee_angle: mean of the knee angles
-        mean_ankle_angle: mean of the ankle angles
+        knee_angles_mean: mean of the knee angles
+        ankle_angles_mean: mean of the ankle angles
     """
     knee_angles_sum = 0
     ankle_angles_sum = 0
@@ -186,20 +195,20 @@ def get_mean_distance_saddle_foreaft(mp_obj, points_list, landmarks, side):
     """
     Compute for each frame in the list the horizontal distance between the foot and the knee, then compute the mean
     args:
+        mp_obj: mediapipe object
         points_list: list of points
         landmarks: list of landmarks
+        side: 0 if left, 1 if right
     return:
-        mean_distance: mean of the distances
+        distance_mean: mean of the distances
     """
     distance_sum = 0
     if len(points_list) < 1:
         raise Exception('The list of points is empty')
     # If the side is right, the distance is positive, otherwise is negative
     for point in points_list:
-        foot = landmarks[point[1]
-                         ][mp_obj.mp_pose.PoseLandmark.LEFT_FOOT_INDEX + side]
-        knee = landmarks[point[1]
-                         ][mp_obj.mp_pose.PoseLandmark.LEFT_KNEE + side]
+        foot = landmarks[point[1]][mp_obj.mp_pose.PoseLandmark.LEFT_FOOT_INDEX + side]
+        knee = landmarks[point[1]][mp_obj.mp_pose.PoseLandmark.LEFT_KNEE + side]
         distance_sum += knee.x - foot.x
     distance_mean = distance_sum / len(points_list)
     return distance_mean
@@ -209,7 +218,9 @@ def get_mean_torso_angle(mp_obj, landmark_list, side):
     """
     Compute the angle between the hips, the shoulders and the elbows for each frame, then compute the mean
     args:
+        mp_obj: mediapipe object
         landmark_list: list of landmarks
+        side: 0 if left, 1 if right
     return:
         mean_angle: mean of the angles
     """
@@ -227,9 +238,11 @@ def get_saddle_distance(mp_obj, landmarks, side, total_length, angle):
     """
     Given the rider's length up to the hip, find the length of the ankle-knee and knee-hip
     args:
+        mp_obj: mediapipe object
         landmarks: list of landmarks
         side: side of the rider
         total_length: length of the rider up to the hip in cm
+        angle: angle between the hip, knee and ankle
     return:
         distance_real_world: distance in real world between foot and hip in cm
         ratio: ratio between the distance in real word and the image
@@ -239,11 +252,11 @@ def get_saddle_distance(mp_obj, landmarks, side, total_length, angle):
     hip_point = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HIP + side]
 
     distance_knee_hip = get_distance([knee_point.x, knee_point.y],
-                                     [hip_point.x, hip_point.y])
+                                        [hip_point.x, hip_point.y])
     distance_ankle_knee = get_distance([ankle_point.x, ankle_point.y],
-                                       [knee_point.x, knee_point.y])
+                                        [knee_point.x, knee_point.y])
     distance_ankle_hip = get_distance([ankle_point.x, ankle_point.y],
-                                  [hip_point.x, hip_point.y])
+                                        [hip_point.x, hip_point.y])
 
     # Compute the distance in real world of the knee and the ankle
     # total_length : knee_hip = distance_knee_hip + distance_ankle_knee : distance_knee_hip
@@ -277,6 +290,7 @@ def get_handlebar_distance(mp_obj, landmarks, ratio, torso_angle, side):
     """
     Compute the handlebar distance in real world, given the radio between image and real world.
     args:
+        mp_obj: mediapipe object
         landmarks: list of landmarks
         ratio: ratio between image and real world
         torso_angles: list of angles of the torso
@@ -305,7 +319,6 @@ def get_handlebar_distance(mp_obj, landmarks, ratio, torso_angle, side):
     mean_distance_shoulder_elbow *= ratio
     mean_distance_hip_wrist *= ratio
 
-
     # Compute the distance between the handlebar and the hip in real world
     # We can't use the 'mean_distance_hip_wrist' because it always refers to the image case, we need to compute also
     # the distance in the general case without the image reference
@@ -323,14 +336,11 @@ def pipeline(video, person_height:int):
     Pipeline of the algorithm
     args:
         video: VideoCapture object
+        person_height: height of the person in centimeters up to the hip
     return:
-        knee_angles_mean_south: mean of the knee angles for the south points
-        ankle_angles_mean_south: mean of the ankle angles for the south points
-        knee_angles_mean_north: mean of the knee angles for the north points
-        ankle_angles_mean_north: mean of the ankle angles for the north points
-        distance_mean: mean of the horizontal distance between the foot and the knee
-        torso_angles_mean: mean of the angle between the shoulders and the hips, and a point on the same x axes of the hip
-
+        list1: list of values representing the centimeters needed to adjust 
+            the saddle and the handlebar, plus the direction of the bike
+        list2: list of values representing the angles of the joints
     """
     mp_obj = MediaPipePoseEstimation()
     # Compute the landmarks for each frame and store it in a list, and return the last frame to display the tests
@@ -374,8 +384,6 @@ def pipeline(video, person_height:int):
     print_point_bike_fitting(point_list_south, frame)
     print_point_bike_fitting(point_list_west, frame)
     print_point_bike_fitting(point_list_north, frame)
-
-
 
     # One frame for each cardinal point with the landmarks
     landmarks_east = print_frame(mp_obj,video, point_list_east[0][1], "EAST")
