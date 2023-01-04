@@ -38,14 +38,17 @@ I decided to use mediapipe because in addition to the Pose Estimation it is also
 .
 ├── backend                             # Computer Vision Tasks
 │   ├── bike_fitting        
-│   │   └── capture_video.py            # Bike Fitting Task
-│   └── mtb_down_hill       
-│       ├── yolo_object_detection
-│       │   ├── yolov3.cgf              # Config File for YOLO
-│       │   ├── yolov3.txt              # Classes List for YOLO
-│       │   └── yolov3.weights          # Weights for YOLO (download it!)
-│       ├── bike_detector.py            # MTB Downhill Task
-│       └── yolo_object_detection.py    # Bike Detection Task
+│   │   └── capture_video.py            # Bike Fitting Task (pipeline() is the main function)
+│   ├── mtb_down_hill       
+│   │   ├── yolo_object_detection
+│   │   │   ├── yolov3.cgf              # Config File for YOLO
+│   │   │   ├── yolov3.txt              # Classes List for YOLO
+│   │   │   └── yolov3.weights          # Weights for YOLO (download it!)
+│   │   ├── bike_detector.py            # MTB Downhill Task (pipeline() is the main function)
+│   │   └── yolo_object_detection.py    # Bike Detection Task
+│   ├── math_utils.py                   # Set of function for math problems
+│   ├── mediapipe_pose_estimation.py    # Class for Mediapipe operation
+│   └── print_utils.py                  # Set of functions for displaying plots
 ├── frontend                            
 │   └── frontend.py                     # Process outputs of backend
 ├── doc                                 # Documentation files
