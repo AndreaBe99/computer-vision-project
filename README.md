@@ -73,7 +73,7 @@ Install Python requirements
 
     pyhton3 -m pip install -r requirements.txt
 
-## Step to reproduce it loacally
+## Steps to reproduce it loacally
 
 1. Download repository:
 
@@ -124,7 +124,7 @@ Install Python requirements
     python3 app.py
     ```
 
-## Step to deploy on Google Cloud Platform
+## Steps to deploy on Google Cloud Platform
 
 1. Create a bucket if it not exists.
 
