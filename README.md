@@ -8,6 +8,20 @@ However, this procedure is very difficult to perform alone, so our goal is to us
 
 - The second Task has the objective of correcting the posture of MTB cyclists during descents on rough Trails, in fact given an input side image of the cyclist traveling downhill, the program identifies the wheels of the bicycle and the Key Points of the cyclist to calculate if the center of gravity of the latter is located inside the two wheels. This is because if the center of gravity is too far back, grip on the front will be lost, while if it is too far forward, the cyclist could fall forward if he encounters an obstacle such as a stone or a root.
 
+## Links
+
+### Video Demo
+
+You can find a video demo of the website and its features at the following link [Computer-Vision-Project-Demo](https://drive.google.com/file/d/1J7gnb28WYn2_3yd_EOr60DnTgjQXTEmx/view?usp=sharing).
+
+### Web Site
+
+You can also visit the site at the following link [cv-website](https://cv-website-dgquvaq5aq-ue.a.run.app/).
+
+### Slides
+
+It is possible to find the slides of the presentation of the project at the following link [Computer Vision Slides](https://docs.google.com/presentation/d/1EyEG7qIevNA8es4BO4-PQPoszGo3Drr9zkRvOMwjQz8/edit?usp=sharing).
+
 ## OpenPose vs MediaPipe
 
 For the project I didn't use OpenPose, but MediaPipe mainly for two reasons:
@@ -15,12 +29,8 @@ For the project I didn't use OpenPose, but MediaPipe mainly for two reasons:
 - the first concerns the fact that OpenPose is not optimized for CPU usage, and not having a device with a dedicated GPU, image processing required about ten seconds, while videos could not be analysed.
 - the second reason is that while deploying on Google Cloud using OpenPose gave me problems, as I was unable to use GPU Cuda due to the fact that my test credit for Google Cloud is almost empty.
 
-I decided to use mediapipe because in addition to the Pose Estimation it is also possible to obtain a mask of the human body useful for the second task of the project, when calculating the center of mass. Furthermore, through various searches I have found that it is more reliable than Openpose, as is written in the following article [Detection of human body landmarks - MediaPipe and OpenPose comparison](https://www.hearai.pl/post/14-openpose/)
+I decided to use mediapipe because in addition to the Pose Estimation it is also possible to obtain a mask of the human body useful for the second task of the project, when calculating the center of mass. Furthermore, through various searches I have found that it is more reliable than Openpose, as is written in the following article [Detection of human body landmarks - MediaPipe and OpenPose comparison](https://www.hearai.pl/post/14-openpose/).
 
-
- ## Slides
-
-It is possible to find the slides of the presentation of the project at the following link [Computer Vision Slides](https://docs.google.com/presentation/d/1EyEG7qIevNA8es4BO4-PQPoszGo3Drr9zkRvOMwjQz8/edit?usp=sharing).
 
 ## Folder Structure
 
