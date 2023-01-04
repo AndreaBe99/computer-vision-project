@@ -65,13 +65,17 @@ I decided to use mediapipe because in addition to the Pose Estimation it is also
 
 ## Requirements for local execution
 
-Download yolov3 weight at [pjreddie.com](https://pjreddie.com/media/files/yolov3.weights)
+Download yolov3 weight at [pjreddie.com](https://pjreddie.com/media/files/yolov3.weights):
 
     wget https://pjreddie.com/media/files/yolov3.weights
 
-Install Python requirements
+Install Python requirements:
 
     pyhton3 -m pip install -r requirements.txt
+
+Install ffmpeg for video encoding:
+
+    apt-get install -y ffmpeg
 
 ## Steps to reproduce it loacally
 
