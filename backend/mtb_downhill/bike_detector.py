@@ -1,54 +1,13 @@
-import mediapipe as mp
-import os
-import sys
 import cv2
+
+from config import *
+from backend.math_utils import *
+from backend.print_utils import *
+from backend.mediapipe_pose_estimation import MediaPipePoseEstimation
 from backend.mtb_downhill.yolo_object_detection import *
 
-sys.path.append("../../")
-from config import *
 
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-mp_pose = mp.solutions.pose
-
-def detect_landmarks(image):
-    """Detect the landmarks of the body
-        args:   
-            image: the image where the landmarks will be detected
-        returns:
-            landmarks: the landmarks of the body
-    """
-    # Determine width and height of the image
-    with mp_pose.Pose(
-            static_image_mode=True,
-            model_complexity=2,
-            enable_segmentation=True,
-            min_detection_confidence=0.5) as pose:
-
-        image_copy = image.copy()
-        # Convert the BGR image to RGB before processing.
-        results = pose.process(cv2.cvtColor(image_copy, cv2.COLOR_BGR2RGB))
-
-        if not results.pose_landmarks:
-            return False
-
-        landmarks = results.pose_landmarks.landmark
-        image_copy.flags.writeable = True
-        mp_drawing.draw_landmarks(
-            image_copy,
-            results.pose_landmarks,
-            mp_pose.POSE_CONNECTIONS,
-            landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-        
-
-        if DEBUG:
-            cv2.imshow('MediaPipe Pose', results.segmentation_mask)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-
-        return image_copy, landmarks, results.segmentation_mask
-
-def wheels_under_hips(landmarks, circles):
+def wheels_under_hips(mp_obj, landmarks, circles):
     """
     Filter the circles that are under the hips.
     args:
@@ -57,8 +16,8 @@ def wheels_under_hips(landmarks, circles):
     returns:
         circles: the circles that are under the hips
     """
-    hip_left = landmarks[mp_pose.PoseLandmark.LEFT_HIP]
-    hip_right = landmarks[mp_pose.PoseLandmark.RIGHT_HIP]
+    hip_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HIP]
+    hip_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_HIP]
     hip = hip_right if hip_left.visibility < hip_right.visibility else hip_left
 
     new_circles = []
@@ -69,31 +28,16 @@ def wheels_under_hips(landmarks, circles):
     return new_circles
 
 
-def get_center_of_mass(image, segmentation_mask):
-    """Get the center of mass of the cyclist
-        args:
-            image: the image where the center of mass will be computed
-        returns:
-            center_of_mass: the center of mass point of the cyclist
-    """
-    # calculate moments of binary image
-    m = cv2.moments(segmentation_mask)
-    # calculate x,y coordinate of center
-    c_x = int(m["m10"] / m["m00"])
-    c_y = int(m["m01"] / m["m00"])
-    center_of_mass = (c_x, c_y)
-    return center_of_mass
-
-
 def check_if_point_is_between_two_points(point, point1, point2):
-    """Check if a point is between two other points
-        args:   
-            point: the point to check
-            point1: the first point
-            point2: the second point
-        returns:
-            True if the point is between the two other points
-            False if the point is not between the two other points
+    """
+    Check if a point is between two other points
+    args:   
+        point: the point to check
+        point1: the first point
+        point2: the second point
+    returns:
+        True if the point is between the two other points
+        False if the point is not between the two other points
     """
     if point > point1 and point < point2:
         return True
@@ -102,11 +46,12 @@ def check_if_point_is_between_two_points(point, point1, point2):
 
 
 def detect_wheels(image):
-    """Detect the wheels of the bike
-        args:   
-            image: the image where the wheels will be detected
-        returns:
-            circles: the circles detected in the image
+    """
+    Detect the wheels of the bike
+    args:   
+        image: the image where the wheels will be detected
+    returns:
+        circles: the circles detected in the image
     """
     output = image.copy()
     image_height, image_width, _ = image.shape
@@ -167,7 +112,7 @@ def detect_wheels(image):
     return circles
 
 
-def check_crank_position(image, landmarks, circle_a, circle_b):
+def check_crank_position(mp_obj, image, landmarks, circle_a, circle_b):
     """
     Check if the crank is in the right position, i.e. if the foot are in the same 
     horizontal line of the two wheels centers.
@@ -184,11 +129,11 @@ def check_crank_position(image, landmarks, circle_a, circle_b):
     height, width, channels = image.shape
 
     # Get the foot landmark
-    foot_left = landmarks[mp_pose.PoseLandmark.LEFT_FOOT_INDEX]
-    foot_right = landmarks[mp_pose.PoseLandmark.RIGHT_FOOT_INDEX]
+    foot_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_FOOT_INDEX]
+    foot_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_FOOT_INDEX]
     # Get the heel landmark
-    heel_left = landmarks[mp_pose.PoseLandmark.LEFT_HEEL]
-    heel_right = landmarks[mp_pose.PoseLandmark.RIGHT_HEEL]
+    heel_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HEEL]
+    heel_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_HEEL]
 
     # We can use only one foot landmark, the one with the highest visibility
     # because if one of the two foot is in the right position, the other one will be too
@@ -255,7 +200,7 @@ def check_crank_position(image, landmarks, circle_a, circle_b):
     return True if result > 0 else False
 
 
-def check_heel_position(landmarks):
+def check_heel_position(mp_obj, landmarks):
     """
     Check if the heel is in the right position, i.e. if the heel is under the foot_index
     args:
@@ -265,11 +210,11 @@ def check_heel_position(landmarks):
         False if the heel is not in the right position
     """
     # Get the foot landmark
-    foot_left = landmarks[mp_pose.PoseLandmark.LEFT_FOOT_INDEX]
-    foot_right = landmarks[mp_pose.PoseLandmark.RIGHT_FOOT_INDEX]
+    foot_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_FOOT_INDEX]
+    foot_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_FOOT_INDEX]
     # Get the heel landmark
-    heel_left = landmarks[mp_pose.PoseLandmark.LEFT_HEEL]
-    heel_right = landmarks[mp_pose.PoseLandmark.RIGHT_HEEL]
+    heel_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HEEL]
+    heel_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_HEEL]
 
     # Check visibility of the landmarks, if upper than 0.5, the landmark is visible
     # and we can use it
@@ -287,7 +232,7 @@ def check_heel_position(landmarks):
     return left_position, right_position
 
 
-def get_bike_direction(landmarks: list):
+def get_bike_direction(mp_obj, landmarks: list):
     """
     Compute the direction of the bike
     args:
@@ -296,10 +241,10 @@ def get_bike_direction(landmarks: list):
         direction: direction of the bike, 'left' or 'right'
     """
     # Get WRIST and HIP landmarks
-    left_wrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-    right_wrist = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
-    left_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP]
-    right_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP]
+    left_wrist = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_WRIST]
+    right_wrist = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_WRIST]
+    left_hip = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_HIP]
+    right_hip = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_HIP]
 
     # Check visibility of the landmarks
     if left_wrist.HasField('visibility') and right_wrist.HasField('visibility'):
@@ -312,7 +257,7 @@ def get_bike_direction(landmarks: list):
     return BikeFittingEnum.LEFT.value if wrist.x < hip.x else BikeFittingEnum.RIGHT.value
 
 
-def check_head_hand_distance(landmarks, circle_a, circle_b):
+def check_head_hand_distance(mp_obj, landmarks, circle_a, circle_b):
     """
     Check if the distance between the head and the hand is correct
     args:
@@ -324,8 +269,8 @@ def check_head_hand_distance(landmarks, circle_a, circle_b):
         False if the distance is not correct
     """
     # Get the hand landmark
-    hand_left = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-    hand_right = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
+    hand_left = landmarks[mp_obj.mp_pose.PoseLandmark.LEFT_WRIST]
+    hand_right = landmarks[mp_obj.mp_pose.PoseLandmark.RIGHT_WRIST]
     # get the hand with the highest visibility
     hand = hand_left if hand_left.visibility > hand_right.visibility else hand_right
     # Get a point of the face. In the list returned from Medipipe, the first
@@ -337,8 +282,8 @@ def check_head_hand_distance(landmarks, circle_a, circle_b):
         if head is None or head.visibility < landmarks[i].visibility:
             head = landmarks[i]
     
-    mouth_left = landmarks[mp_pose.PoseLandmark.MOUTH_LEFT]
-    mouth_right = landmarks[mp_pose.PoseLandmark.MOUTH_RIGHT]
+    mouth_left = landmarks[mp_obj.mp_pose.PoseLandmark.MOUTH_LEFT]
+    mouth_right = landmarks[mp_obj.mp_pose.PoseLandmark.MOUTH_RIGHT]
     mouth = mouth_left if mouth_left.visibility > mouth_right.visibility else mouth_right
 
     # Unpack the circle centers
@@ -354,7 +299,7 @@ def check_head_hand_distance(landmarks, circle_a, circle_b):
     # the hand, the position is incorrect
     position = None
 
-    side = get_bike_direction(landmarks)
+    side = get_bike_direction(mp_obj, landmarks)
     if side == BikeFittingEnum.LEFT.value:
         position = True if mouth.x > hand.x else False
     elif side == BikeFittingEnum.RIGHT.value:
@@ -363,12 +308,14 @@ def check_head_hand_distance(landmarks, circle_a, circle_b):
 
 
 def get_nearmost_wheels_point(circles):
-    """Get the nearmost point of the wheels
-        args:   
-            circles: the circles detected in the image
-        returns:
-            rightest: the righest point of the left wheel
-            leftest: the leftest point of the right wheel
+    """
+    Get the nearmost point of the wheels
+    
+    args:   
+        circles: the circles detected in the image
+    returns:
+        rightest: the righest point of the left wheel
+        leftest: the leftest point of the right wheel
     """
     # get the coordinates of the wheels
     x1, _, _ = circles[0]
@@ -393,112 +340,9 @@ def get_nearmost_wheels_point(circles):
     return (righest_point, y1), (leftest_point, y2)
 
 
-def print_circle(image, circles):
-    """Print the circles in the image
-        args:   
-            image: the image where the circles will be printed
-            circles: the circles to be printed
-    """
-    output = image.copy()
-    if circles is not None:
-        circles = np.uint16(np.around(circles))
-        for circle in circles:
-            # draw the outer circle
-            cv2.circle(output, (circle[0], circle[1]), circle[2], (0, 255, 0), 2)
-            # draw the center of the circle
-            cv2.circle(output, (circle[0], circle[1]), 2, (0, 0, 255), 3)
-    if DEBUG:
-        cv2.imshow('Circles', output)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-def print_extended_line(p1, p2, image, color=(0, 0, 255)):
-    """
-    Extend a line
-    args:
-        p1: the first point of the line
-        p2: the second point of the line distance: the distance to extend the line
-    returns:
-        new_line: the extended line
-    """
-    image_width, image_height, _ = image.shape
-    if image_width > image_height:
-        distance = BikeDetectorEnum.SCALE.value * image_width
-    else:
-        distance = BikeDetectorEnum.SCALE.value * image_height
-
-    diff = np.arctan2(p1[1] - p2[1], p1[0] - p2[0])
-    p3_x = int(p1[0] + distance*np.cos(diff))
-    p3_y = int(p1[1] + distance*np.sin(diff))
-    p4_x = int(p1[0] - distance*np.cos(diff))
-    p4_y = int(p1[1] - distance*np.sin(diff))
-
-    cv2.line(image, (p3_x, p3_y), (p4_x, p4_y), color, 2)
-
-def get_parallel_line(p1, p2, p3):
-    """
-    Find the parallel line of the segment p1-p2, that passes through p3
-    args:
-        p1: the first point of the segment
-        p2: the second point of the segment
-        p3: the point that the parallel line must pass through
-    returns:
-        p4: the second point of the parallel line
-    """
-    x1, y1 = p1
-    x2, y2 = p2
-    x3, y3 = p3
-
-    # To find the parallel segment, we need to first determine the slope of the original line.
-    m = (y2 - y1) / (x2 - x1)
-
-    # Once we have the slope, we can use the point-slope formula to find the equation of the
-    # line that passes through point (x3, y3) with the same slope:
-    # y - y3 = m * (x - x3)
-    # y = m * x - m * x3 + y3
-
-    # Choose x4
-    x4 = x3 + 100
-    y4 = int(m * x4 - m * x3 + y3)
-
-    return (x3, y3), (x4, y4)
-def get_perpendicular_line(wheels_center, com):
-    """Print the perpendicular line between the wheels center and the center of mass
-        args:
-            wheels_center: the center of the wheels
-            com: the center of mass
-            image: the image where the line will be printed
-    """
-    wheel_a, wheel_b = wheels_center
-    x1, y1 = wheel_a
-    x2, y2 = wheel_b
-    x3, y3 = com
-    k = ((y2 - y1) * (x3 - x1) - (x2 - x1) * (y3 - y1)) / ((y2 - y1) ** 2 + (x2 - x1) ** 2)
-    x4 = int(x3 - k * (y2 - y1))
-    y4 = int(y3 + k * (x2 - x1))
-    return (x3, y3), (x4, y4)
-
-
-def print_point(image, points, text, color=(255, 255, 0)):
-    """Print a point in the image
-        args:   
-            image: the image where the point will be printed
-            point: the point to be printed
-    """
-    for i, point in enumerate(points):
-        x, y = point
-        cv2.circle(image, (int(x), int(y)), 5, color, -1)
-        #cv2.line(image, (int(x), 0), (int(x), image.shape[1]), color, 1)
-        cv2.putText(image, text[i], (int(x-10), int(y-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 3)
-        cv2.putText(image, text[i], (int(x-10), int(y-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-    if DEBUG:
-        cv2.imshow('Point', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-
 def pipeline(image):
-    """The pipeline of the project, it will detect the wheels of the bike, 
+    """
+    The pipeline of the project, it will detect the wheels of the bike, 
     and the position of the body, to suggest if the biker has a correct posture.
         args:
             image: the image to be processed
@@ -517,8 +361,9 @@ def pipeline(image):
     circles = circles[0, :]
 
     # 3. Use Mediapipe to detect the landmarks
+    mp_obj = MediaPipePoseEstimation()
     # 3.1. Detect the landmarks
-    pose_image, landmarks, segmentation_mask = detect_landmarks(image)
+    pose_image, landmarks, segmentation_mask = mp_obj.detect_image_landmarks(image)
     # 3.2. Print the landmarks in the original image
     if DEBUG:
         cv2.imshow('Landmarks', pose_image)
@@ -533,7 +378,7 @@ def pipeline(image):
         # raise Exception("Error: No circles detected")
 
     # 4.2. Check if the center fo the wheels is under the hips
-    circles = wheels_under_hips(landmarks, circles)
+    circles = wheels_under_hips(mp_obj, landmarks, circles)
     if len(circles) != 2:
         return None, BikeDetectorEnum.ERROR_NUM_CIRCLE.value, BikeDetectorEnum.RED_COLOR_STR.value
         # raise Exception("Error: The number of circles detected is not 2")
@@ -548,7 +393,7 @@ def pipeline(image):
     # 5. Calculate the nearmost point of the two wheels
     left_wheel, right_wheel = get_nearmost_wheels_point(circles)
     # 5.1. Print the nearmost point in the original image
-    print_point(image, [left_wheel, right_wheel], ["Left wheel's righest point", "Right wheel's leftest point"])
+    print_point_mtb_descent(image, [left_wheel, right_wheel], ["Left wheel's righest point", "Right wheel's leftest point"])
 
 
     # 5. Calculate the center of mass point
@@ -589,11 +434,13 @@ def pipeline(image):
     print_extended_line(wheel_a_1, wheel_a_2, image, (255, 255, 0))
 
     # 8.2. Print the center of mass point
-    print_point(image, [center_of_mass], ["Center of mass"], color)
+    print_point_mtb_descent(image, [center_of_mass], ["Center of mass"], color)
 
 
     # 9. Check if the crank is in the correct position
-    crank_position = check_crank_position(image_copy, landmarks, circles[0], circles[1])
+    crank_position = check_crank_position(
+        mp_obj, image_copy, landmarks, circles[0], circles[1])
+
     if crank_position:
         crank_suggestion = BikeDetectorEnum.CRANK_SUGGESTION_CORRECT.value
         crank_suggestion_color = BikeDetectorEnum.GREEN_COLOR_STR.value
@@ -602,7 +449,7 @@ def pipeline(image):
         crank_suggestion_color = BikeDetectorEnum.RED_COLOR_STR.value
     
     # 10. Check if the heel is below the foot_index
-    heel_position_left, heel_position_right = check_heel_position(landmarks)
+    heel_position_left, heel_position_right = check_heel_position(mp_obj, landmarks)
     # Check suggestion, if it is True the position is correct, 
     # if it is False the position is incorrect
     # if it is None the position is not detected
@@ -633,7 +480,7 @@ def pipeline(image):
         heel_suggestion_right_color = BikeDetectorEnum.ORANGE_COLOR_STR.value
 
     # 11. Check the distance between the head and the hand, i.e. the handlebar
-    head_hand_distance = check_head_hand_distance(landmarks, circles[0], circles[1])
+    head_hand_distance = check_head_hand_distance(mp_obj, landmarks, circles[0], circles[1])
     if head_hand_distance:
         head_hand_suggestion = BikeDetectorEnum.HEAD_HAND_SUGGESTION_CORRECT.value
         head_hand_suggestion_color = BikeDetectorEnum.GREEN_COLOR_STR.value
@@ -656,22 +503,3 @@ def pipeline(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     return image, site_suggestion, site_color
-
-if __name__ == "__main__":
-    dir_path = BikeDetectorEnum.TEST_IMAGES_PATH.value
-    # list to store files
-    images = []
-    # Iterate directory
-    for path in os.listdir(dir_path):
-        # check if current path is a file
-        if os.path.isfile(os.path.join(dir_path, path)):
-            images.append(path)
-    
-    images_path = [dir_path + image for image in images]
-
-    for image_path in images_path:
-        # Read the image
-        image = cv2.imread(image_path)
-        # Compute the pipeline
-        _, suggestion, _ = pipeline(image)
-        print(suggestion)
