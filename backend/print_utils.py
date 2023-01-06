@@ -122,7 +122,7 @@ def print_frame(mp_obj, video, frame_index, name: str):
     """
     video.set(cv2.CAP_PROP_POS_FRAMES, 0)
     frame = get_frame_from_point(video, frame_index)
-    frame, landmark = mp_obj.get_landmarks_from_frame(frame)
+    frame, landmark, _ = mp_obj.detect_image_landmarks(frame)
     if DEBUG:
         cv2.imshow('FRAME '+name, frame)
         cv2.waitKey(0)
